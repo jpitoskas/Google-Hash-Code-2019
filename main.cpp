@@ -1,4 +1,4 @@
-#pragma GCC optimize ("Ofast")
+#pragma GCC optimize("Ofast")
 
 #include <iostream>
 #include <fstream>
@@ -6,105 +6,241 @@
 #include <string>
 #include <algorithm>
 #include <vector>
+#include <iterator>
+#include <set>
 
 using namespace std;
 
-class Ride{
-public:
-    
-    Ride();
-    ~Ride();
-};
-
-class Vehicle{
-public:
+class Photo
+{
+  public:
     int id;
+    bool orientation; // HORIZONTAL 0, VERTICAL 1
+    vector<string> tags;
+    bool isAvailable;
 
-    Vehicle();
-    ~Vehicle();
+    Photo(){};
+    Photo(int id, bool orientation, const vector<string> &tags) : id(id), orientation(orientation), isAvailable(true)
+    {
+        this->tags.reserve(tags.size());
+        for (unsigned int i = 0; i < tags.size(); i++)
+        {
+            this->tags.push_back(tags[i]);
+        }
+    };
+    ~Photo(){};
+
+    friend ostream &operator<<(ostream &os, const Photo &photo)
+    {
+        os << "PHOTO " << photo.id << '\n';
+        os << "ORIENTATION: " << photo.orientation << '\n';
+        os << "TAGS: ";
+        for (unsigned int i = 0; i < photo.tags.size(); i++)
+        {
+            os << photo.tags[i] << " ";
+        }
+        os << "\n\n";
+        return os;
+    }
 };
-class Position{};
 
-// auto compare = [](const Ride& r1, const Ride& r2) -> bool {
+class Slide
+{
+  public:
+    std::vector<int> id;
+    bool orientation;
+    set<string> tags;
+
+    Slide();
+    Slide( Photo& p) : orientation(p.orientation)
+    {
+        id.push_back(p.id);
+        tags.insert(p.tags.begin(), p.tags.end());
+    };
+
+    Slide( Photo& p1,  Photo& p2) : orientation(p1.orientation)
+    {
+        id.push_back(p1.id);
+        id.push_back(p2.id);
+        p1.tags.insert(p1.tags.end(), p2.tags.begin(), p2.tags.end());
+        tags.insert(p1.tags.begin(), p1.tags.end());
+    }
+    ~Slide(){};
+
+    friend ostream &operator<<(ostream &os, const Slide &slide)
+    {
+        os << "SLIDE " << '\n';
+        os << "ID: ";
+        for(int i = 0; i < slide.id.size(); i++) 
+        {
+            os << slide.id[i] << " ";
+        }
+        os << '\n';
+        os << "ORIENTATION: " << slide.orientation << '\n';
+        os << "TAGS: ";
+        for (auto i = slide.tags.begin(); i != slide.tags.end(); i++)
+        {
+            os << *i << " ";
+        }
+        os << "\n\n";
+        return os;
+    }
+};
+
+// auto compare = [](const Photo& r1, const Photo& r2) -> bool {
 //     if (r1.m_speed != r2.m_speed)
 //         return r1.m_speed < r2.m_speed;
 //     return r1.x0() <= r2.x0();
 // };
 
-
-void readFile(unsigned int fileIndex, string* inputFilePaths, int size, int& rows, int& columns, int& F, int& N, int& bonus, int& T, vector< vector<int> >& data)
+void deletePhoto(std::vector<Photo>& photos, const Photo& toBeErased)
 {
-	ifstream file(inputFilePaths[fileIndex]);
-
-	string line;
-	stringstream buffer;
-
-	while (getline(file, line))
+	for (unsigned int i = 0; i < photos.size(); i++)
 	{
-		buffer << line << '\n';
-	}
-
-	cout << buffer.str() << endl;
-	buffer >> rows >> columns >> F >> N >> bonus >> T;
-
-	data.resize(N);
-	for (int i = 0; i < N; i++)
-	{
-		data[i].resize(6);
-		for (int j = 0; j < 6; j++)
-		{
-			buffer >> data[i][j];
-		}
+		if (toBeErased.id == photos[i].id)
+			photos.erase(photos.begin() + i);
 	}
 }
 
-void writeFile(unsigned int fileIndex, string* outputFilePaths, int size, const vector<Vehicle>& fleet)
+pair<vector<Photo>, vector<Photo>>
+readFile(unsigned int fileIndex, string *inputFilePaths, int size, int &N, char &orientation, int &num_tags, vector<string> &tags)
 {
-	ofstream output;
-	output.open(outputFilePaths[fileIndex]);
-	for (unsigned int v = 0; v < fleet.size(); v++)
-	{
-		// vector<int> finalRides = fleet[v].id;
-		// output << finalRides.size() << " ";
-		// for (auto it : finalRides)
-		// {
-		// 	output << it << " ";
-		// }
-		output << '\n';
-	}
-	output.close();
+    ifstream file(inputFilePaths[fileIndex]);
 
+    string line;
+    stringstream buffer;
+
+    while (getline(file, line))
+    {
+        buffer << line << '\n';
+    }
+
+    // cout << buffer.str() << endl;
+    buffer >> N;
+
+    vector<Photo> photos, horizontal_photos, vertical_photos;
+    photos.reserve(N);
+    horizontal_photos.reserve(N);
+    vertical_photos.reserve(N);
+    for (int i = 0; i < N; i++)
+    {
+        buffer >> orientation >> num_tags;
+        tags.resize(num_tags);
+        for (int j = 0; j < num_tags; j++)
+        {
+            buffer >> tags[j];
+        }
+
+        photos.emplace_back(i, (orientation == 'H') ? true : false, tags);
+        if (orientation == 'H')
+        {
+            horizontal_photos.push_back(photos[i]);
+        }
+        else
+        {
+            vertical_photos.push_back(photos[i]);
+        }
+    }
+
+    return {horizontal_photos, vertical_photos};
+}
+
+void writeFile(unsigned int fileIndex, string *outputFilePaths, int size, const vector<Slide> &slides)
+{
+    ofstream output;
+    output.open(outputFilePaths[fileIndex]);
+
+    output << slides.size() << "\n";
+    for (auto& it : slides)
+    {
+        for(int i = 0; i < it.id.size(); i++)
+        {
+            output << it.id[i] << " ";
+
+        }
+        output << '\n';
+    }
+
+    output.close();
+}
+
+int find_common_tags(const vector<string>& tags1, const vector<string>& tags2)
+{
+    int common_tags = 0;
+    for (unsigned int i = 0; i < tags1.size(); i++)
+    {
+        for (unsigned int j = 0; j < tags2.size(); j++)
+        {
+            if(tags1[i] == tags2[j])
+            {
+                common_tags++;
+            }
+        }
+    }
+    return common_tags;
 }
 
 const int NUM_FILES = 5;
 
-int main() {
+int main(int argc, char** argv)
+{
 
-	unsigned int fileIndex = 0;
-	string inputFilePaths[NUM_FILES] = { "Files/a.in", "Files/b.in", "Files/c.in", "Files/d.in", "Files/e.in" };
-	
-	int rows, columns, F, N, bonus, T;
-	vector< vector<int> > data;
-	
-	readFile(fileIndex, inputFilePaths, NUM_FILES, rows, columns, F, N, bonus, T, data);
+    unsigned int fileIndex = atoi(argv[1]);
+    string inputFilePaths[NUM_FILES] = {"Files/a.in", "Files/b.in", "Files/c.in", "Files/d.in", "Files/e.in"};
 
-	// Rides
-	vector<Ride> rides;
-	rides.resize(N);
-	for (int i = 0; i < N; i++)
-		rides[i] = Ride();
+    int N, num_tags;
+    vector<string> tags;
+    char orientation;
 
-	// Vehicles
-	vector<Vehicle> fleet;
-	fleet.resize(F);
-	for (int i = 0; i < F; i++)
-		fleet[i] = Vehicle();
+    pair<vector<Photo>, vector<Photo>> photos;
+    photos = readFile(fileIndex, inputFilePaths, NUM_FILES, N, orientation, num_tags, tags);
 
-	// MAIN LOOP
+    // for(int i = 0; i < photos.first.size(); i++)
+    // {photos.first[i]
+    // }
+    // for(int i = 0; i < photos.second.size(); i++)
+    // {
+    // }
+    // cerr << photos.first.size() << '\n';
+    // cerr << photos.second.size();
 
-	// Output
-	string outputFilePaths[5] = { "Files/output_a.out" ,"Files/output_b.out" ,"Files/output_c.out" ,"Files/output_d.out", "Files/output_e.out" };
-	writeFile(fileIndex, outputFilePaths, outputFilePaths->size(), fleet);
-	
-	return 0;
+    // Slide
+    vector<Slide> slides;
+
+    for (unsigned int i = 0; i < photos.first.size(); i++)
+    {
+        slides.emplace_back(photos.first[i]);
+    }
+
+    for (unsigned int i = 0; i < photos.second.size(); i++)
+    {
+        if(photos.second[i].isAvailable)
+        {
+            int max = 0;
+            int max_id = 0;
+            for (unsigned int j = i + 1; j < photos.second.size(); j++)
+            {
+                int common = find_common_tags(photos.second[i].tags, photos.second[j].tags);
+                if(common > max)
+                {
+                    max = common;
+                    max_id = j;
+
+                }            
+            }
+            photos.second[max_id].isAvailable = false;
+            slides.emplace_back(photos.second[i], photos.second[max_id]);
+        }
+    }
+
+    // for(int i = 0; i < slides.size(); i++)
+    // {
+    //     cout << slides[i];
+    // }
+
+    // Output
+    string outputFilePaths[5] = { "Files/output_a.out" ,"Files/output_b.out" ,"Files/output_c.out" ,"Files/output_d.out", "Files/output_e.out" };
+    writeFile(fileIndex, outputFilePaths, NUM_FILES, slides);
+
+    return 0;
 }
