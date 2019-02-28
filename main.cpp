@@ -180,6 +180,31 @@ int find_common_tags(const vector<string>& tags1, const vector<string>& tags2)
     return common_tags;
 }
 
+int find_common_tags(const set<string>& tags1, const set<string>& tags2)
+{
+    int common_tags = 0;
+    for (auto& it : tags1)
+    {
+        for (auto& it2 : tags2)
+        {
+            if(it == it2)
+            {
+                common_tags++;
+            }
+        }
+    }
+    return common_tags;
+}
+
+int find_score(const Slide& s1, const Slide& s2)
+{
+    int common_tags = find_common_tags(s1.tags, s2.tags);
+    int v1 = s1.tags.size() - common_tags;
+    int v2 = s2.tags.size() - common_tags;
+    int first_min =  min(v1, v2);
+    return (first_min, common_tags);
+}
+
 const int NUM_FILES = 5;
 
 int main(int argc, char** argv)
@@ -212,31 +237,35 @@ int main(int argc, char** argv)
         slides.emplace_back(photos.first[i]);
     }
 
-    for (unsigned int i = 0; i < photos.second.size(); i++)
+    for (unsigned int i = 0; i < photos.second.size() - 1; i++)
     {
         if(photos.second[i].isAvailable)
         {
             int max = 0;
-            int max_id = 0;
+            int max_id = -1;
             for (unsigned int j = i + 1; j < photos.second.size(); j++)
             {
-                int common = find_common_tags(photos.second[i].tags, photos.second[j].tags);
-                if(common > max)
+                if(photos.second[j].isAvailable)
                 {
-                    max = common;
-                    max_id = j;
+                    int common = find_common_tags(photos.second[i].tags, photos.second[j].tags);
+                    if(common >= max)
+                    {
+                        max = common;
+                        max_id = j;
 
-                }            
+                    }  
+                }          
             }
-            photos.second[max_id].isAvailable = false;
             slides.emplace_back(photos.second[i], photos.second[max_id]);
+            photos.second[i].isAvailable = false;
+            photos.second[max_id].isAvailable = false;
         }
     }
 
-    // for(int i = 0; i < slides.size(); i++)
-    // {
-    //     cout << slides[i];
-    // }
+    for(int i = 0; i < slides.size(); i++)
+    {
+        
+    }
 
     // Output
     string outputFilePaths[5] = { "Files/output_a.out" ,"Files/output_b.out" ,"Files/output_c.out" ,"Files/output_d.out", "Files/output_e.out" };
