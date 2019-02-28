@@ -50,15 +50,16 @@ class Slide
     std::vector<int> id;
     bool orientation;
     set<string> tags;
+    bool isAvailable;
 
     Slide();
-    Slide( Photo& p) : orientation(p.orientation)
+    Slide( Photo& p) : orientation(p.orientation) , isAvailable(true)
     {
         id.push_back(p.id);
         tags.insert(p.tags.begin(), p.tags.end());
     };
 
-    Slide( Photo& p1,  Photo& p2) : orientation(p1.orientation)
+    Slide(Photo& p1,  Photo& p2) : orientation(p1.orientation), isAvailable(true)
     {
         id.push_back(p1.id);
         id.push_back(p2.id);
@@ -231,45 +232,77 @@ int main(int argc, char** argv)
 
     // Slide
     vector<Slide> slides;
-
+    slides.reserve(N);
     for (unsigned int i = 0; i < photos.first.size(); i++)
     {
         slides.emplace_back(photos.first[i]);
     }
 
-    for (unsigned int i = 0; i < photos.second.size() - 1; i++)
-    {
-        if(photos.second[i].isAvailable)
+    // for (unsigned int i = 0; i < photos.second.size() - 1; i++)
+    // {
+    //     if(photos.second[i].isAvailable)
+    //     {
+    //         int max = 0;
+    //         int max_id = -1;
+    //         for (unsigned int j = i + 1; j < photos.second.size(); j++)
+    //         {
+    //             if(photos.second[j].isAvailable)
+    //             {
+    //                 int common = find_common_tags(photos.second[i].tags, photos.second[j].tags);
+    //                 if(common >= max)
+    //                 {
+    //                     max = common;
+    //                     max_id = j;
+
+    //                 }  
+    //             }          
+    //         }
+    //         slides.emplace_back(photos.second[i], photos.second[max_id]);
+    //         photos.second[i].isAvailable = false;
+    //         photos.second[max_id].isAvailable = false;
+    //     }
+    // }
+
+    // if(photos.second.size() != 0)
+    // {
+        for (int i = 0; i < (int)(photos.second.size() - 2); i += 2)
         {
-            int max = 0;
-            int max_id = -1;
-            for (unsigned int j = i + 1; j < photos.second.size(); j++)
-            {
-                if(photos.second[j].isAvailable)
-                {
-                    int common = find_common_tags(photos.second[i].tags, photos.second[j].tags);
-                    if(common >= max)
-                    {
-                        max = common;
-                        max_id = j;
-
-                    }  
-                }          
-            }
-            slides.emplace_back(photos.second[i], photos.second[max_id]);
-            photos.second[i].isAvailable = false;
-            photos.second[max_id].isAvailable = false;
+            // cout << photos.second[i];
+            slides.emplace_back(photos.second[i], photos.second[i + 1]);
         }
-    }
+    // }
 
-    for(int i = 0; i < slides.size(); i++)
+    vector<Slide> final_slides;
+    // final_slides.reserve(slides.size());
+    for(int i = 0; i < slides.size() - 1; i++)
     {
+        if(slides[i].isAvailable)
+        {
+            int max_score = -1000;
+            int max_id = -1;
+            for(int j = i + 1; j < slides.size(); j++)
+            {
+                if(slides[j].isAvailable)
+                {
+                    int score = find_score(slides[i], slides[j]);
+                    if(score > max_score)
+                    {
+                        max_score = score;
+                        max_id = j;
+                    }
+                }
+            }
+            final_slides.push_back(slides[i]);
+            final_slides.push_back(slides[max_id]);
+            slides[i].isAvailable = false;
+            slides[max_id].isAvailable = false;
+        }
         
     }
 
     // Output
     string outputFilePaths[5] = { "Files/output_a.out" ,"Files/output_b.out" ,"Files/output_c.out" ,"Files/output_d.out", "Files/output_e.out" };
-    writeFile(fileIndex, outputFilePaths, NUM_FILES, slides);
+    writeFile(fileIndex, outputFilePaths, NUM_FILES, final_slides);
 
     return 0;
 }
