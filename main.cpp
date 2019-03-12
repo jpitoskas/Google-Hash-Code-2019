@@ -22,7 +22,6 @@ class Photo
     Photo(){};
     Photo(int id, bool orientation, const vector<string> &tags) : id(id), orientation(orientation), isAvailable(true)
     {
-        this->tags.reserve(tags.size());
         for (unsigned int i = 0; i < tags.size(); i++)
         {
             this->tags.push_back(tags[i]);
@@ -120,9 +119,9 @@ readFile(unsigned int fileIndex, string *inputFilePaths, int size, int &N, char 
     buffer >> N;
 
     vector<Photo> photos, horizontal_photos, vertical_photos;
-    photos.reserve(N);
-    horizontal_photos.reserve(N);
-    vertical_photos.reserve(N);
+    // photos.reserve(N);
+    // horizontal_photos.reserve(N);
+    // vertical_photos.reserve(N);
     for (int i = 0; i < N; i++)
     {
         buffer >> orientation >> num_tags;
@@ -232,7 +231,7 @@ int main(int argc, char** argv)
 
     // Slide
     vector<Slide> slides;
-    slides.reserve(N);
+    // slides.reserve(N);
     for (unsigned int i = 0; i < photos.first.size(); i++)
     {
         slides.emplace_back(photos.first[i]);
@@ -263,18 +262,18 @@ int main(int argc, char** argv)
     //     }
     // }
 
-    // if(photos.second.size() != 0)
-    // {
+    if(photos.second.size() != 0)
+    {
         for (int i = 0; i < (int)(photos.second.size() - 2); i += 2)
         {
             // cout << photos.second[i];
             slides.emplace_back(photos.second[i], photos.second[i + 1]);
         }
-    // }
+    }
 
     vector<Slide> final_slides;
     // final_slides.reserve(slides.size());
-    for(int i = 0; i < slides.size() - 1; i++)
+    for(int i = 0; i < slides.size(); i++)
     {
         if(slides[i].isAvailable)
         {
@@ -292,10 +291,14 @@ int main(int argc, char** argv)
                     }
                 }
             }
-            final_slides.push_back(slides[i]);
-            final_slides.push_back(slides[max_id]);
-            slides[i].isAvailable = false;
-            slides[max_id].isAvailable = false;
+
+            if(max_id != -1)
+            {
+                final_slides.push_back(slides[i]);
+                slides[i].isAvailable = false;
+                final_slides.push_back(slides[max_id]);
+                slides[max_id].isAvailable = false;
+            }
         }
         
     }
