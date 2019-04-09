@@ -70,8 +70,8 @@ for i in range(N):
         # isos i+1
     # print(photos[i].ori, photos[i].num, photos[i].tags, photos[i].id )
 
-shuffle(v)
 
+shuffle(v)
 vs = []
 for i in range(0, len(v), 2):
     tags = list(set(v[i].tags+v[i+1].tags))
@@ -82,16 +82,41 @@ for i in range(0, len(v), 2):
     vs.append(s)
 import sys
 slides = hs + vs
+
 shuffle(slides)
-file1 = 'e'
+
+file1 = 'c'
 file2 = '_output'
 out = open(file1 + file2 + ".txt", 'w')
 out.write(str(len(slides)) + '\n')
-for i in range(len(slides)):
-    if (slides[i].ori == 'H'):
-        out.write(str(slides[i].id) + '\n')
+
+start = slides[-1]
+result = []
+result.append(start)
+slides[-1].flag = False
+
+if (start.ori == 'H'):
+    out.write(str(start.id) + '\n')
+else:
+    out.write(str(start.ids[0]) + ' ' + str(start.ids[1]) + '\n')
+
+current = start
+current_id = -1
+for i in range(len(slides)-1):
+    slides[current_id].flag = False
+    max = 0
+    for j in range(len(slides)-1):
+        if (slides[j].flag == True):
+            points = score(current.tags, slides[j].tags)
+            if (points > max):
+                max = points
+                current_id = j
+                current = slides[j]
+
+    if (slides[current_id].ori == 'H'):
+        out.write(str(slides[current_id].id) + '\n')
     else:
-        out.write(str(slides[i].ids[0]) + ' ' + str(slides[i].ids[1]) + '\n')
+        out.write(str(slides[current_id].ids[0]) + ' ' + str(slides[current_id].ids[1]) + '\n')
 out.close()
 
 
